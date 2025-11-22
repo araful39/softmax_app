@@ -1,4 +1,4 @@
-package com.example.softmax_app
+package com.softmax.app
 import android.os.Build
 import android.provider.Settings
 import androidx.annotation.NonNull

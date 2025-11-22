@@ -1,41 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:softmax_app/providers/login_provider.dart';
 import 'package:softmax_app/providers/post_details_provider.dart';
 import 'package:softmax_app/providers/post_list_provider.dart';
 import 'package:softmax_app/providers/profile_provider.dart';
-import 'package:softmax_app/screen/log_in_screen.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-         providers: [
+var registerProviders = [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => ProfileProvider()),
           ChangeNotifierProvider(create: (_) => PostListProvider()),
            ChangeNotifierProvider(create: (_) => PostDetailsProvider()),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false ,
-        title: 'Softmax App',
-         theme: ThemeData(primarySwatch: Colors.green),
-        home: const LoginScreen(),
-      ),
-    );
-  }
-}
-
-
-
-
-
-
-
-
+      ];

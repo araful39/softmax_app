@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:softmax_app/model/post_list_model.dart';
+import 'package:softmax_app/providers/post_list_provider.dart';
+import 'package:softmax_app/screen/post_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,51 +48,140 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() =>
+        Provider.of<PostListProvider>(context, listen: false).fetchPosts());
+
+    _scrollController.addListener(() {
+      final provider =
+          Provider.of<PostListProvider>(context, listen: false);
+
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        provider.loadMore();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+      final provider = Provider.of<PostListProvider>(context, listen: false);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Native Device Info'),
-        backgroundColor: Colors.teal,
+        title: const Text("Post List (StreamBuilder)"),
+        backgroundColor: Colors.deepPurple,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _getDeviceInfo,
         backgroundColor: Colors.teal,
         child: const Icon(Icons.refresh),
       ),
+ body: Column(
+        children: [
+          // 🔍 Search Box
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: "Search posts...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: provider.searchPosts,
+            ),
+          ),
 
-      // body: Center(
-      //   child: Padding(
-      //     padding: const EdgeInsets.all(20.0),
-      //     child: Column(
-      //       mainAxisAlignment: MainAxisAlignment.center,
-      //       children: [
-      //         const Icon(Icons.phone_android, size: 80, color: Colors.teal),
-      //         const SizedBox(height: 30),
-      //         Text(
-      //           _deviceInfo,
-      //           textAlign: TextAlign.center,
-      //           style: const TextStyle(fontSize: 16),
-      //         ),
-      //         const SizedBox(height: 40),
-      //         ElevatedButton.icon(
-      //           onPressed: _getDeviceInfo,
-      //           icon: const Icon(Icons.info_outline),
-      //           label: const Text('Get Device Info'),
-      //           style: ElevatedButton.styleFrom(
-      //             backgroundColor: Colors.teal,
-      //             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-      //             textStyle: const TextStyle(fontSize: 18),
-      //           ),
-      //         ),
-      //       ],
-      //     ),
-      //   ),
-      // ),
+          Expanded(
+            child: StreamBuilder<PosListModel?>(
+              stream: provider.postStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text("Error: ${snapshot.error}"));
+                }
+
+                if (!snapshot.hasData || snapshot.data!.posts == null) {
+                  return const Center(child: Text("No Data Found"));
+                }
+
+                final posts = snapshot.data!.posts!;
+
+                return RefreshIndicator(
+                  onRefresh: provider.refreshPosts,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: posts.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == posts.length) {
+                        return provider.hasMore
+                            ? const Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            : const SizedBox();
+                      }  
+
+                      final post = posts[index];
+
+                      return GestureDetector(
+                        onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => PostDetailsScreen(postId: post.id!),
+    ),
+  );
+},
+
+                        child: Card(
+                          margin: const EdgeInsets.all(10),
+                          child: ListTile(
+                            title: Text(
+                              post.title ?? "",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              post.body ?? "",
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Column(
+                              children: [
+                                Text("👍 ${post.reactions?.likes}"),
+                                Text("👁 ${post.views}"),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
-
 // Beautiful Success Dialog Widget
 class SuccessDialog extends StatelessWidget {
   const SuccessDialog({super.key, required this.deviceInfo});
