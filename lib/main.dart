@@ -19,6 +19,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false ,
         title: 'Softmax App',
          theme: ThemeData(primarySwatch: Colors.green),
         home: const LoginScreen(),
