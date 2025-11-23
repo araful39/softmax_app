@@ -4,20 +4,15 @@ A new Flutter project.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+##Deep link testing command:
+adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://dummyjson.com/posts/1" com.softmax.app
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-apk:
+##apk:
 
 https://drive.google.com/file/d/1tIuhV737dtfI2Pq3wcEV4JkiaUf1jSnH/view?usp=sharing
+
+
+
 
 <img width="438" height="878" alt="image" src="https://github.com/user-attachments/assets/2e007148-9daf-4200-8d87-dad21fab0201" />
 
