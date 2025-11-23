@@ -7,10 +7,11 @@ A new Flutter project.
 
 ## Project Overview
 
-This Flutter project demonstrates a complete mini-application covering authentication, API integration, infinite scrolling, deep linking, and native Android integration using MethodChannel.
-It is designed to test and showcase practical Flutter development skills, including state management, navigation, native communication, and REST API handling.
+This Flutter project demonstrates a complete mini-application built to showcase essential real-world development skills. It implements authentication, REST API integration, infinite scrolling, deep linking, and native Android communication using MethodChannel.
 
-The project consists of four major features:
+The architecture follows clean coding practices with Provider for state management, ensuring scalability and easy maintenance.
+
+The project consists of four major features.
 
 ## Open AndroidManifest.xml
 
