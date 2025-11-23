@@ -24,6 +24,64 @@ Inside <activity android:name=".MainActivity"> add:
     <data android:scheme="https" android:host="dummyjson.com" />
 </intent-filter>
 
+
+
+
+  Future<void> _initDeepLinkListener() async {
+    Uri? initialLink = await _appLinks.getInitialLink();
+    if (initialLink != null) {
+      log('Cold start - Initial Link: $initialLink');
+      _handleDeepLink(initialLink);
+    }
+
+    if (!isListening) {
+      isListening = true;
+      _appLinks.uriLinkStream.listen(
+        (Uri? uri) {
+          if (uri != null) _handleDeepLink(uri);
+        },
+        onError: (err) => log('Deep link stream error: $err'),
+      );
+    }
+  }
+
+  void _handleDeepLink(Uri uri) async {
+    log('Handling deep link: $uri');
+
+    if (uri.host != 'dummyjson.com') return;
+
+    if (uri.pathSegments.length >= 2 && uri.pathSegments[0] == 'posts') {
+      final String postId = uri.pathSegments[1];
+      if (postId.isEmpty) return;
+
+      final authProvider = context.read<AuthProvider>();
+
+      if (authProvider.user == null) {
+        bool success = await authProvider.login("emilys", "emilyspass");
+        if (!success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Auto-login failed. Please login manually.")),
+          );
+          return;
+        }
+      }
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostDetailsScreen(postId: int.parse(postId)),
+        ),
+      );
+    }
+  }
+
+
+
+
+  
+
 ## ADB Deep Link Test Command:
 
 adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://dummyjson.com/posts/1" com.softmax.app
@@ -88,6 +146,36 @@ Version Code: ${Build.VERSION.RELEASE}
     }
 }
 
+
+
+
+
+Future<void> _getDeviceInfo() async {
+    String deviceInfo;
+    try {
+      final String result = await platform.invokeMethod('getAllDeviceInfo');
+      deviceInfo = result;
+    } on PlatformException catch (e) {
+      deviceInfo = "Failed to get device info: '${e.message}'.";
+    }
+
+    if (!mounted) return;
+
+    setState(() => _deviceInfo = deviceInfo);
+    _showSuccessDialog();
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => SuccessDialog(deviceInfo: _deviceInfo),
+    );
+
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted && Navigator.canPop(context)) Navigator.of(context).pop();
+    });
+  }
 
 
 
