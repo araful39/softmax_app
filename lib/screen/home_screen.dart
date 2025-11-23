@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:softmax_app/model/post_list_model.dart';
 import 'package:softmax_app/providers/post_list_provider.dart';
 import 'package:softmax_app/screen/post_details_screen.dart';
 
@@ -16,6 +16,39 @@ class _HomeScreenState extends State<HomeScreen> {
   static const platform = MethodChannel('com.example.device_info/methods');
   String _deviceInfo = 'Press the button to get device info';
 
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(
+      () => Provider.of<PostListProvider>(context, listen: false).fetchPosts(),
+    );
+
+    _scrollController.addListener(() {
+      final provider = Provider.of<PostListProvider>(context, listen: false);
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 100 &&
+          provider.hasMore &&
+          !provider.isLoadingMore &&
+          provider.searchQuery.isEmpty) {
+        // Only load more when not searching
+        provider.loadMore();
+      }
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    final provider = Provider.of<PostListProvider>(context, listen: false);
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      provider.searchPosts(query);
+    });
+  }
+
   Future<void> _getDeviceInfo() async {
     String deviceInfo;
     try {
@@ -25,11 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
       deviceInfo = "Failed to get device info: '${e.message}'.";
     }
 
-    setState(() {
-      _deviceInfo = deviceInfo;
-    });
+    if (!mounted) return;
 
-    // Show success dialog after getting info
+    setState(() => _deviceInfo = deviceInfo);
     _showSuccessDialog();
   }
 
@@ -40,41 +71,16 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (_) => SuccessDialog(deviceInfo: _deviceInfo),
     );
 
-    // Auto close after 2.5 seconds
     Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
-    });
-  }
-
-  final ScrollController _scrollController = ScrollController();
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-
-    Future.microtask(() =>
-        Provider.of<PostListProvider>(context, listen: false).fetchPosts());
-
-    _scrollController.addListener(() {
-      final provider =
-          Provider.of<PostListProvider>(context, listen: false);
-
-      if (_scrollController.position.pixels ==
-          _scrollController.position.maxScrollExtent) {
-        provider.loadMore();
-      }
+      if (mounted && Navigator.canPop(context)) Navigator.of(context).pop();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-      final provider = Provider.of<PostListProvider>(context, listen: false);
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Post List (StreamBuilder)"),
+        title: const Text("Posts"),
         backgroundColor: Colors.deepPurple,
       ),
       floatingActionButton: FloatingActionButton(
@@ -82,9 +88,8 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.teal,
         child: const Icon(Icons.refresh),
       ),
- body: Column(
+      body: Column(
         children: [
-          // 🔍 Search Box
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
@@ -96,76 +101,71 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onChanged: provider.searchPosts,
+              onChanged: _onSearchChanged,
             ),
           ),
-
           Expanded(
-            child: StreamBuilder<PosListModel?>(
-              stream: provider.postStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            child: Consumer<PostListProvider>(
+              builder: (context, provider, _) {
+                final posts = provider.filteredPosts;
+                final showLoading =
+                    provider.searchQuery.isEmpty && provider.hasMore;
+
+                if (provider.isLoading && posts.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (snapshot.hasError) {
-                  return Center(child: Text("Error: ${snapshot.error}"));
+                if (posts.isEmpty) {
+                  return const Center(child: Text("No posts found"));
                 }
-
-                if (!snapshot.hasData || snapshot.data!.posts == null) {
-                  return const Center(child: Text("No Data Found"));
-                }
-
-                final posts = snapshot.data!.posts!;
 
                 return RefreshIndicator(
                   onRefresh: provider.refreshPosts,
                   child: ListView.builder(
                     controller: _scrollController,
-                    itemCount: posts.length + 1,
+                    itemCount: posts.length + (showLoading ? 1 : 0),
                     itemBuilder: (context, index) {
-                      if (index == posts.length) {
-                        return provider.hasMore
-                            ? const Padding(
-                                padding: EdgeInsets.all(20),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            : const SizedBox();
-                      }  
+                      if (index == posts.length && showLoading) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
 
                       final post = posts[index];
-
                       return GestureDetector(
                         onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => PostDetailsScreen(postId: post.id!),
-    ),
-  );
-},
-
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PostDetailsScreen(postId: post.id!),
+                            ),
+                          );
+                        },
                         child: Card(
-                          margin: const EdgeInsets.all(10),
+                          margin: const EdgeInsets.symmetric(
+                            vertical: 6,
+                            horizontal: 10,
+                          ),
                           child: ListTile(
                             title: Text(
                               post.title ?? "",
                               style: const TextStyle(
-                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
                             subtitle: Text(
                               post.body ?? "",
-                              maxLines: 3,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text("👍 ${post.reactions?.likes}"),
-                                Text("👁 ${post.views}"),
+                                Text("👍 ${post.reactions?.likes ?? 0}"),
+                                Text("👁 ${post.views ?? 0}"),
                               ],
                             ),
                           ),
@@ -181,11 +181,18 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
 }
-// Beautiful Success Dialog Widget
+
 class SuccessDialog extends StatelessWidget {
   const SuccessDialog({super.key, required this.deviceInfo});
-
   final String deviceInfo;
 
   @override
@@ -195,7 +202,6 @@ class SuccessDialog extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(30),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
@@ -220,7 +226,7 @@ class SuccessDialog extends StatelessWidget {
             Text(
               deviceInfo,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.black87),
+              style: const TextStyle(fontSize: 16, color: Colors.black87),
             ),
           ],
         ),

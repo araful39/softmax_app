@@ -29,7 +29,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Post Details"),
+        title: Text("Post Details", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepPurple,
       ),
 
