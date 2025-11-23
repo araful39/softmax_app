@@ -13,6 +13,7 @@ The architecture follows clean coding practices with Provider for state manageme
 
 The project consists of four major features.
 
+## Deep linking
 ## Open AndroidManifest.xml
 
 Inside <activity android:name=".MainActivity"> add:
@@ -88,7 +89,7 @@ Inside <activity android:name=".MainActivity"> add:
 adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://dummyjson.com/posts/1" com.softmax.app
 
 
-
+## Get Device Details
 ## MethodChannel Setup (Android):
 Open MainActivity.kt
 android/app/src/main/kotlin/.../MainActivity.kt
