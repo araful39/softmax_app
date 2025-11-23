@@ -14,11 +14,28 @@ The project consists of four major features:
 
 ## Open AndroidManifest.xml
 
+Inside <activity android:name=".MainActivity"> add:
 
+
+    <intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="https" android:host="dummyjson.com" />
+</intent-filter>
 
 ## ADB Deep Link Test Command:
 
 adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://dummyjson.com/posts/1" com.softmax.app
+
+
+
+## MethodChannel Setup (Android):
+Open MainActivity.kt
+android/app/src/main/kotlin/.../MainActivity.kt
+
+
+
 
 ## apk:
 
