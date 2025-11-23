@@ -4,15 +4,25 @@ A new Flutter project.
 
 ## Getting Started
 
-##Deep link testing command:
+
+## Project Overview
+
+This Flutter project demonstrates a complete mini-application covering authentication, API integration, infinite scrolling, deep linking, and native Android integration using MethodChannel.
+It is designed to test and showcase practical Flutter development skills, including state management, navigation, native communication, and REST API handling.
+
+The project consists of four major features:
+
+## Deep link testing command:
 
 adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://dummyjson.com/posts/1" com.softmax.app
 
-##apk:
+## apk:
 
 https://drive.google.com/file/d/1tIuhV737dtfI2Pq3wcEV4JkiaUf1jSnH/view?usp=sharing
 
+## video:
 
+https://youtu.be/xT4GPZJruYY?si=3ddFwMUf9k_brYDX
 
 
 <img width="438" height="878" alt="image" src="https://github.com/user-attachments/assets/2e007148-9daf-4200-8d87-dad21fab0201" />
