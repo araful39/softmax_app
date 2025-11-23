@@ -5,6 +5,7 @@ A new Flutter project.
 ## Getting Started
 
 ##Deep link testing command:
+
 adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://dummyjson.com/posts/1" com.softmax.app
 
 ##apk:
