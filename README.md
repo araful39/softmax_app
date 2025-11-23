@@ -12,7 +12,11 @@ It is designed to test and showcase practical Flutter development skills, includ
 
 The project consists of four major features:
 
-## Deep link testing command:
+## Open AndroidManifest.xml
+
+
+
+## ADB Deep Link Test Command:
 
 adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://dummyjson.com/posts/1" com.softmax.app
 
